@@ -11,8 +11,7 @@
     "docs": "0.x"
   },
   "dependencies": {
-    "vtex.order-manager": "0.x",
-    "vtex.store-graphql": "2.x"
+    "vtex.order-manager": "0.x"
   },
   "registries": [
     "smartcheckout"
