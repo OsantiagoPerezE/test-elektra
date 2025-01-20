@@ -1,81 +1,206 @@
-# Store Locator Component
+# TestCustom Component
 
-The **Store Locator** component from Mattelsa allows users to explore the list of available brand stores as well as view detailed information about each store. This component is designed to integrate with the **Master Data** system, making its configuration and management straightforward.
+## Descripción
+TestCustom es un componente React para VTEX IO que gestiona y sincroniza la información del carrito de compras (OrderForm) con Master Data. El componente rastrea automáticamente los cambios en el carrito y mantiene un registro persistente de los items en la entidad "TE" de Master Data.
 
-## Features
+## Características Principales
+- Sincronización automática del OrderForm con Master Data
+- Seguimiento de items del carrito (productos, precios, cantidades)
+- Manejo automático de creación y actualización de documentos
+- Integración con VTEX Order Manager
+- Utilización de GraphQL para operaciones en Master Data
 
-1. **Store List**
-   - Renders a list of all available stores.
-   - Displays basic information such as name, location, and status (open or closed).
-   - Filters stores by city to simplify searches.
+## Requisitos Técnicos
+- VTEX IO
+- React
+- Apollo Client
+- VTEX Order Manager
 
-2. **Store Detail**
-   - Upon selecting a store from the list, a detailed view is displayed with:
-     - Operating hours.
-     - Full address.
-     - An interactive map showing the store location.
-   - Button to open the location directly in Google Maps.
+## Instalación
 
-3. **Configuration via Master Data**
-   - Manage stores directly from Master Data.
+1. Añade el componente a las dependencias de tu `manifest.json`:
 
-## Component Structure
-
-### Store List View
-
-- **Header**: Includes the title "Stores" and a dropdown filter to select the city.
-- **Store Cards**: Each card includes:
-  - Store image.
-  - Store name.
-  - Location (city and address).
-  - Status indicator.
-
-### Store Detail View
-
-- **Header**: Displays the store name and its current status.
-- **Detailed Information**:
-  - Operating hours organized by day.
-  - Full address.
-  - Interactive map with a marker at the exact location.
-- **Action**: Button to open the location in Google Maps.
-
-## Configuration in Master Data
-
-1. Access the platform's Master Data.
-2. Add the **Store Locator** component to the desired page.
-3. Configure the stores by adding:
-   - Name.
-   - Address.
-   - Operating hours.
-   - Status.
-   - Images.
-
-## Interfaces
-
-- ### **`locator-store-custom`**
-
-## Usage
-
-```json
 {
-  "store.custom#store-locator": {
-    "children": ["flex-layout.row#store-locator", "contact-chat"]
-  },
-  "flex-layout.row#store-locator": {
-    "title": "Main container - Store Locator",
-    "props": {
-      "blockClass": "store-locator__row",
-      "fullWidth": true,
-      "colSizing": "auto"
-    },
-    "children": ["locator-store-custom"]
-  },
-  "locator-store-custom": {
-    "props": {
-      "mapsApiKey": "AIzaSyBR148-Kgxm_0KR-kZJRHMfSo5_qnuLwA0",
-      "textTitleStores": "stores",
-      "textLinkGoogleMaps": "open in google maps"
+  "dependencies": {
+    "vtex.test-custom": "0.x",
+    "vtex.order-manager": "0.x"
+  }
+}
+
+## Estructura de Datos
+El componente almacena la siguiente información en Master Data:
+
+### Entidad: TE
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| orderFormId | string | ID único del carrito de compras |
+| Items | string (JSON) | Array de productos en el carrito |
+
+### Estructura de Items
+```typescript
+interface OrderFormItem {
+  productId: string;     // ID del producto
+  sellingPrice: number;  // Precio de venta
+  name: string;         // Nombre del producto
+  quantity: number;     // Cantidad
+}
+```
+
+## Funcionamiento
+1. El componente monitorea cambios en el OrderForm
+2. Cuando detecta cambios:
+   - Busca un documento existente con el orderFormId actual
+   - Si no existe, crea un nuevo documento
+   - Si existe, actualiza el documento existente
+3. Mantiene sincronizados los datos del carrito con Master Data
+
+## Uso
+Añade el componente en tu archivo de bloques:
+```
+{
+  "store.custom": {
+    "blocks": ["test-custom"]
+  }
+}
+```
+## GraphQL
+El componente utiliza tres operaciones principales:
+
+- `GET_DOCUMENT`: Consulta documentos existentes
+- `CREATE_DOCUMENT`: Crea nuevos documentos
+- `UPDATE_DOCUMENT`: Actualiza documentos existentes
+
+### Ejemplo de consulta GET_DOCUMENT:
+```graphql
+query GET_DOCUMENT($acronym: String!, $fields: [String!]!, $where: String) {
+  documents(acronym: $acronym, fields: $fields, where: $where) {
+    id
+    fields {
+      key
+      value
+    }
+  }
+}
+
+
+mutation CREATE_DOCUMENT($acronym: String!, $document: DocumentInput!) {
+  createDocument(acronym: $acronym, document: $document) {
+    id
+    fields {
+      key
+      value
+    }
+  }
+}
+
+mutation UPDATE_DOCUMENT($acronym: String!, $fields: [DocumentFieldInput!]!) {
+  updateDocument(acronym: $acronym, fields: $fields) {
+    id
+    fields {
+      key
+      value
     }
   }
 }
 ```
+## Contribución
+1. Fork el repositorio
+2. Crea una rama para tu feature (`git checkout -b feature/NuevaCaracteristica`)
+3. Commit tus cambios (`git commit -m 'Añade nueva característica'`)
+4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
+5. Abre un Pull Request
+
+## Soporte
+Para reportar problemas o solicitar nuevas características, por favor abre un issue en el repositorio.
+
+## Licencia
+Este proyecto está bajo la Licencia MIT.
+
+## Versiones Disponibles
+El componente está disponible en dos versiones:
+
+### 1. Versión Master Data (Actual)
+- Utiliza Master Data para persistencia de datos
+- Operaciones mediante GraphQL
+- Ideal para datos que necesitan ser accesibles desde el backend
+
+### 2. Versión LocalStorage (Rama LocalStorage)
+- Utiliza el almacenamiento local del navegador
+- Operaciones síncronas directas
+- Ideal para pruebas y desarrollo local
+
+## Implementación con LocalStorage
+
+### Estructura de Datos
+Los datos se almacenan en LocalStorage con la siguiente estructura:
+
+```typescript
+interface StorageData {
+  orderFormId: string;
+  items: OrderFormItem[];
+}
+
+interface OrderFormItem {
+  productId: string;     // ID del producto
+  sellingPrice: number;  // Precio de venta
+  name: string;         // Nombre del producto
+  quantity: number;     // Cantidad
+}
+```
+
+### Ejemplo de Uso con LocalStorage
+
+```typescript
+const TestCustomLocalStorage = () => {
+  const { orderForm } = useOrderForm();
+  const STORAGE_KEY = 'vtex-cart-items';
+
+  const saveToLocalStorage = (data: StorageData) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  };
+
+  const getFromLocalStorage = (): StorageData | null => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  };
+
+  useEffect(() => {
+    if (orderForm?.id && orderForm.id !== 'default-order-form') {
+      const cartData = {
+        orderFormId: orderForm.id,
+        items: orderForm.items.map(item => ({
+          productId: item.productId,
+          sellingPrice: item.sellingPrice,
+          name: item.name,
+          quantity: item.quantity,
+        }))
+      };
+      saveToLocalStorage(cartData);
+    }
+  }, [orderForm]);
+
+  return <Fragment />;
+};
+```
+
+### Ventajas de la Versión LocalStorage
+* Implementación más simple y directa
+* Sin dependencia de servicios externos
+* Operaciones más rápidas
+* Ideal para desarrollo y pruebas
+
+### Limitaciones de LocalStorage
+* Almacenamiento limitado (generalmente 5-10 MB)
+* Los datos solo persisten en el navegador local
+* No hay sincronización entre dispositivos
+* Los datos se pierden al limpiar el caché del navegador
+
+## Comparativa de Versiones
+
+| Característica | Versión Master Data | Versión LocalStorage |
+|----------------|---------------------|---------------------|
+| Persistencia | Servidor (permanente) | Navegador (local) |
+| Sincronización | Entre dispositivos | Solo local |
+| Velocidad | Depende de la red | Inmediata |
+| Casos de uso | Producción | Desarrollo/Pruebas |
+
