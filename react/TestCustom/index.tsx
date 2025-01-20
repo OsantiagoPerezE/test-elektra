@@ -47,7 +47,6 @@ const TestCustom = () => {
       const responseGet = dataGetDocument?.documents || [];
 
       if (responseGet.length === 0) {
-        console.log("CREATE");
         createDocument({
           variables: {
             acronym: "TE",
@@ -70,7 +69,6 @@ const TestCustom = () => {
           },
         });
       } else {
-        console.log("UPDATE");
         updateDocument({
           variables: {
             acronym: "TE",
