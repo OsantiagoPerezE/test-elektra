@@ -7,7 +7,6 @@ TestCustom es un componente React para VTEX IO que gestiona y sincroniza la info
 - Sincronización automática del OrderForm con Master Data
 - Seguimiento de items del carrito (productos, precios, cantidades)
 - Manejo automático de creación y actualización de documentos
-- Integración con VTEX Order Manager
 - Utilización de GraphQL para operaciones en Master Data
 
 ## Requisitos Técnicos
@@ -19,14 +18,14 @@ TestCustom es un componente React para VTEX IO que gestiona y sincroniza la info
 ## Instalación
 
 1. Añade el componente a las dependencias de tu `manifest.json`:
-
+```
 {
   "dependencies": {
     "vtex.test-custom": "0.x",
     "vtex.order-manager": "0.x"
   }
 }
-
+```
 ## Estructura de Datos
 El componente almacena la siguiente información en Master Data:
 
@@ -103,81 +102,61 @@ mutation UPDATE_DOCUMENT($acronym: String!, $fields: [DocumentFieldInput!]!) {
   }
 }
 ```
-## Contribución
-1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/NuevaCaracteristica`)
-3. Commit tus cambios (`git commit -m 'Añade nueva característica'`)
-4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
-5. Abre un Pull Request
-
-## Soporte
-Para reportar problemas o solicitar nuevas características, por favor abre un issue en el repositorio.
-
-## Licencia
-Este proyecto está bajo la Licencia MIT.
 
 ## Versiones Disponibles
 El componente está disponible en dos versiones:
 
-### 1. Versión Master Data (Actual)
+### 1. Versión Master Data (main)
 - Utiliza Master Data para persistencia de datos
 - Operaciones mediante GraphQL
 - Ideal para datos que necesitan ser accesibles desde el backend
 
-### 2. Versión LocalStorage (Rama LocalStorage)
+### 2. Versión LocalStorage (localstorage)
 - Utiliza el almacenamiento local del navegador
 - Operaciones síncronas directas
 - Ideal para pruebas y desarrollo local
 
 ## Implementación con LocalStorage
 
-### Estructura de Datos
-Los datos se almacenan en LocalStorage con la siguiente estructura:
-
 ```typescript
-interface StorageData {
-  orderFormId: string;
-  items: OrderFormItem[];
-}
-
-interface OrderFormItem {
-  productId: string;     // ID del producto
-  sellingPrice: number;  // Precio de venta
-  name: string;         // Nombre del producto
-  quantity: number;     // Cantidad
-}
-```
-
-### Ejemplo de Uso con LocalStorage
-
-```typescript
-const TestCustomLocalStorage = () => {
+const TestCustom = () => {
   const { orderForm } = useOrderForm();
-  const STORAGE_KEY = 'vtex-cart-items';
 
-  const saveToLocalStorage = (data: StorageData) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  };
+  const id = useMemo(() => {
+    return orderForm?.id || "";
+  }, [orderForm]);
 
-  const getFromLocalStorage = (): StorageData | null => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  };
+  const items = useMemo(() => {
+    return orderForm?.items || [];
+  }, [orderForm]);
 
   useEffect(() => {
-    if (orderForm?.id && orderForm.id !== 'default-order-form') {
-      const cartData = {
-        orderFormId: orderForm.id,
-        items: orderForm.items.map(item => ({
+    if (id !== "" && id !== "default-order-form" && items.length > 0) {
+      const storedData = localStorage.getItem("test-elektra");
+      const allOrderForms = storedData ? JSON.parse(storedData) : {};
+
+      const orderFormKey = `orderForm_${id}`;
+      const newOrderForm = {
+        orderFormId: id,
+        items: items.map((item: OrderFormItem) => ({
           productId: item.productId,
           sellingPrice: item.sellingPrice,
           name: item.name,
           quantity: item.quantity,
-        }))
+        })),
       };
-      saveToLocalStorage(cartData);
+
+      if (!allOrderForms[orderFormKey]) {
+        console.log("CREATE en localStorage");
+        allOrderForms[orderFormKey] = newOrderForm;
+      } else {
+        console.log("UPDATE en localStorage");
+        allOrderForms[orderFormKey] = newOrderForm;
+      }
+
+      localStorage.setItem("list-orderforms", JSON.stringify(allOrderForms));
     }
-  }, [orderForm]);
+  }, [items, id]);
 
   return <Fragment />;
 };
