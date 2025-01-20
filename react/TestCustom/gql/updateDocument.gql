@@ -1,0 +1,5 @@
+mutation($acronym: String!, $fields: [FieldInput!]) {
+  updateDocument(acronym: $acronym, document: { fields: $fields }){
+    id
+  }
+}
